@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHOP MASTER - Admin Dashboard (Local)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        .sidebar { transition: transform 0.3s ease; }
+        /* Tablet/Desktop layout adjustment */
+        @media (min-width: 768px) { .content-area { margin-left: 16rem; } }
+        .admin-table-container { overflow-x: auto; }
+        .admin-table th, .admin-table td { padding: 1rem; white-space: nowrap; }
+        /* Tab Visibility Logic */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        /* Ensure smooth fixed header on mobile */
+        @media (max-width: 767px) {
+            .content-area { padding-top: 5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="flex min-h-screen">
+        <!-- Mobile Header (Fixed) -->
+        <div class="md:hidden fixed top-0 left-0 right-0 h-16 bg-gray-900 z-50 flex items-center justify-between px-4 shadow-xl">
+            <h1 class="text-xl font-extrabold tracking-wider text-white"> SHOP<span class="text-blue-500">MASTER</span> </h1>
+            <button id="mobile-menu-btn" onclick="toggleMobileSidebar()" class="text-white p-2 rounded-lg hover:bg-gray-800">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </div>
+
+        <!-- Sidebar Navigation (Responsive) -->
+        <aside id="sidebar" class="sidebar fixed top-0 left-0 h-full bg-gray-900 text-white z-40 p-4 w-64 md:flex flex-col shadow-2xl transform -translate-x-full md:translate-x-0">
+            <div class="py-4 mb-6 border-b border-gray-800">
+                <h1 class="text-xl font-extrabold tracking-wider"> SHOP<span class="text-blue-500">MASTER</span> <span class="block text-xs font-light text-gray-400 uppercase tracking-widest mt-1">Local Admin Panel</span> </h1>
+            </div>
+            <nav class="space-y-2 flex-1">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition text-left text-gray-300 bg-gray-800 border-l-4 border-blue-500">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="switchTab('products')" id="nav-products" class="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition text-left text-gray-300">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                    <span>Products</span>
+                </button>
+                <button onclick="switchTab('orders')" id="nav-orders" class="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition text-left text-gray-300">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span>Orders</span>
+                </button>
+            </nav>
+            <div class="text-xs text-gray-600 mt-4">v3.0.0 (Local Only)</div>
+        </aside>
+
+        <div class="content-area flex-1 p-6 md:p-10 pt-20 md:pt-6 bg-gray-50">
+            <!-- Desktop Header (Fixed) -->
+            <header class="fixed top-0 left-0 right-0 md:left-64 h-16 bg-white shadow-sm z-30 flex items-center justify-between px-6 border-b border-gray-200 hidden md:flex">
+                <h2 id="page-title" class="text-xl font-bold text-gray-800">Dashboard Overview</h2>
+                <div class="flex items-center">
+                    <span id="status-indicator" class="h-3 w-3 rounded-full bg-blue-500 mr-2"></span>
+                    <span class="text-sm font-medium text-gray-600">Persistence: <span id="display-admin-id" class="font-bold text-blue-600">Local Storage</span></span>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <div id="view-dashboard" class="tab-content active mt-0 md:mt-10">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 hidden md:block">Dashboard Overview</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-gray-500 text-sm font-medium">Total Revenue</h3>
+                            <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                        </div>
+                        <p class="text-3xl font-bold text-gray-900" id="metric-sales">$0.00</p>
+                        <p class="text-blue-500 text-sm mt-2 font-medium flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Calculated from orders
+                        </p>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-gray-500 text-sm font-medium">Total Orders</h3>
+                            <div class="p-2 bg-purple-50 rounded-lg text-purple-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                            </div>
+                        </div>
+                        <p class="text-3xl font-bold text-gray-900" id="metric-orders">0</p>
+                        <p class="text-purple-500 text-sm mt-2 font-medium flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Total transactions
+                        </p>
+                    </div>
+                </div>
+                <div class="bg-yellow-100 p-8 rounded-2xl shadow-lg border border-yellow-200">
+                    <h3 class="text-lg font-bold text-yellow-800 mb-4">Data Persistence Notice</h3>
+                    <p class="text-yellow-700">This application is running locally without a cloud database. All data (Products, Orders) is stored in your browser's **Local Storage** and will be lost if you clear your browser data or switch devices.</p>
+                </div>
+            </div>
+
+            <!-- Products View -->
+            <div id="view-products" class="tab-content mt-0 md:mt-10">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 hidden md:block">Products Management</h2>
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0">
+                    <div class="relative w-full sm:w-auto">
+                        <!-- Search input removed for simplicity -->
+                    </div>
+                    <button onclick="openProductModal()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition shadow-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg> Add Product
+                    </button>
+                </div>
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                    <div class="admin-table-container">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="text-left text-xs font-bold text-gray-500 uppercase tracking-wider pl-4">Product</th>
+                                    <th class="text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Price</th>
+                                    <th class="text-right text-xs font-bold text-gray-500 uppercase tracking-wider pr-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="product-list" class="bg-white divide-y divide-gray-200">
+                                <tr><td colspan="3" class="p-8 text-center text-gray-500">Loading products...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders View -->
+            <div id="view-orders" class="tab-content mt-0 md:mt-10">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 hidden md:block">Recent Orders</h2>
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                    <div class="admin-table-container">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="text-left text-xs font-bold text-gray-500 uppercase tracking-wider pl-4">Order ID</th>
+                                    <th class="text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th class="text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Total</th>
+                                    <th class="text-left text-xs font-bold text-gray-500 uppercase tracking-wider pr-4">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-list" class="bg-white divide-y divide-gray-200">
+                                <tr><td colspan="4" class="p-8 text-center text-gray-500">Waiting for orders...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- 1. Product Modal (Add/Edit) -->
+    <div id="product-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 transform transition-all">
+            <h3 id="modal-title" class="text-2xl font-bold mb-6 text-gray-800">Add Product</h3>
+            <input type="hidden" id="edit-id">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                    <input id="prod-name" type="text" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                    <input id="prod-price" type="number" step="0.01" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                    <input id="prod-image" type="text" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" value="https://placehold.co/400x400/e9ecef/212529?text=Product">
+                </div>
+            </div>
+            <div class="mt-8 flex justify-end space-x-3">
+                <button onclick="closeProductModal()" class="px-6 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100 font-medium">Cancel</button>
+                <button onclick="saveProduct()" class="px-6 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-medium shadow-lg">Save</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 2. Order Status Modal (Edit) -->
+    <div id="order-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 transform transition-all">
+            <h3 class="text-2xl font-bold mb-6 text-gray-800">Edit Order Status</h3>
+            <input type="hidden" id="order-edit-id">
+            <div class="space-y-4">
+                <p class="text-gray-700">Order ID: <span id="order-display-id" class="font-mono font-bold text-sm"></span></p>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">New Status</label>
+                    <select id="order-status-select" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="Pending">Pending</option>
+                        <option value="Shipped">Shipped</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-8 flex justify-end space-x-3">
+                <button onclick="closeOrderModal()" class="px-6 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100 font-medium">Cancel</button>
+                <button onclick="updateOrderStatus()" class="px-6 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-medium shadow-lg">Update Status</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Custom Action/Error Modal (Replaces alert/confirm) -->
+    <div id="custom-action-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[70] hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 transform transition-all">
+            <h4 id="action-modal-title" class="text-xl font-bold mb-4 text-gray-800">Action Required</h4>
+            <p id="action-modal-message" class="text-gray-700 mb-6"></p>
+            <div class="flex justify-end space-x-3">
+                <button id="action-modal-cancel" onclick="closeCustomActionModal(false)" class="px-5 py-2 rounded-xl text-gray-600 hover:bg-gray-100 font-medium">Cancel</button>
+                <button id="action-modal-confirm" onclick="closeCustomActionModal(true)" class="px-5 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 font-medium shadow-lg">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        
+        let products = [];
+        let orders = [];
+        let globalResolve; // Used for custom action modal confirmation
+
+        // --- LOCAL STORAGE UTILITIES ---
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem('shopMasterProducts', JSON.stringify(products));
+                localStorage.setItem('shopMasterOrders', JSON.stringify(orders));
+            } catch (e) {
+                console.error("Error saving to localStorage:", e);
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const storedProducts = localStorage.getItem('shopMasterProducts');
+                const storedOrders = localStorage.getItem('shopMasterOrders');
+                
+                products = storedProducts ? JSON.parse(storedProducts) : [];
+                orders = storedOrders ? JSON.parse(storedOrders) : [];
+            } catch (e) {
+                console.error("Error loading from localStorage:", e);
+                // Reset data if loading fails
+                products = [];
+                orders = [];
+            }
+        }
+
+        function generateUniqueId() {
+            // Simple ID generation for local testing
+            return crypto.randomUUID().substring(0, 12);
+        }
+
+        // --- SEEDING DATA ---
+        function seedInitialData() {
+            // Only seed if local storage is empty
+            if (products.length > 0 || orders.length > 0) return;
+
+            // Sample products
+            const sampleProducts = [
+                { id: generateUniqueId(), name: "Vintage Camera", price: 499.99, image: "https://placehold.co/400x400/343a40/ffffff?text=Camera", description: "A classic 35mm film camera." },
+                { id: generateUniqueId(), name: "Leather Wallet", price: 79.50, image: "https://placehold.co/400x400/6c757d/ffffff?text=Wallet", description: "Hand-stitched leather bi-fold wallet." },
+                { id: generateUniqueId(), name: "Noise-Cancelling Headphones", price: 249.00, image: "https://placehold.co/400x400/495057/ffffff?text=Headphones", description: "Premium over-ear headphones." },
+                { id: generateUniqueId(), name: "Smart Watch", price: 329.99, image: "https://placehold.co/400x400/adb5bd/212529?text=Watch", description: "Fitness and notification tracking smart watch." },
+                { id: generateUniqueId(), name: "Artisanal Coffee Beans (1lb)", price: 18.75, image: "https://placehold.co/400x400/212529/f8f9fa?text=Coffee", description: "Dark roast, ethically sourced beans." }
+            ];
+            products.push(...sampleProducts);
+
+            // Sample orders
+            const statuses = ["Delivered", "Shipped", "Pending", "Cancelled"];
+            const baseDate = new Date();
+            for (let i = 0; i < 10; i++) {
+                const total = (Math.random() * 500 + 50).toFixed(2);
+                const status = statuses[i % statuses.length];
+                const dateOffset = i * 86400000; // Offset by one day
+                const timestamp = new Date(baseDate.getTime() - dateOffset).getTime();
+
+                orders.push({
+                    id: generateUniqueId(),
+                    total: parseFloat(total),
+                    status: status,
+                    timestamp: timestamp, 
+                    customer: `Customer #${i + 1}`,
+                    items: [{ name: sampleProducts[i % 5].name, price: sampleProducts[i % 5].price, qty: 1 }]
+                });
+            }
+            console.log("Initial seed data loaded.");
+            saveToLocalStorage(); // Save initial seed
+        }
+
+        // --- RENDER FUNCTIONS (Replaces Real-Time Listeners) ---
+        function calculateMetrics() {
+            const totalSales = orders
+                .filter(o => o.status !== 'Cancelled')
+                .reduce((sum, o) => sum + (o.total || 0), 0);
+            
+            document.getElementById('metric-sales').textContent = `$${totalSales.toFixed(2)}`;
+            document.getElementById('metric-orders').textContent = orders.length;
+        }
+
+        function renderProducts() {
+            const tbody = document.getElementById('product-list');
+            tbody.innerHTML = '';
+            
+            if (products.length === 0) {
+                 tbody.innerHTML = '<tr><td colspan="3" class="p-8 text-center text-gray-500">No products found.</td></tr>';
+                 return;
+            }
+            
+            products.forEach(p => {
+                const row = `
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="p-4 pl-4">
+                            <div class="flex items-center">
+                                <img class="h-10 w-10 rounded-lg object-cover mr-3" src="${p.image || 'https://placehold.co/40x40'}" alt="${p.name || 'Product'} image" onerror="this.onerror=null; this.src='https://placehold.co/40x40/f1f5f9/94a3b8?text=N/A'">
+                                <div class="font-medium text-gray-900">${p.name || 'Untitled Product'}</div>
+                            </div>
+                        </td>
+                        <td class="p-4 text-gray-700 font-mono">$${(p.price || 0).toFixed(2)}</td>
+                        <td class="p-4 pr-4 text-right space-x-2 flex justify-end">
+                            <button onclick="editProduct('${p.id}')" class="text-blue-600 hover:text-blue-900 font-medium px-2 py-1 hover:bg-blue-50 rounded transition duration-150">Edit</button>
+                            <button onclick="deleteProduct('${p.id}')" class="text-red-600 hover:text-red-900 font-medium px-2 py-1 hover:bg-red-50 rounded transition duration-150">Delete</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        function renderOrders() {
+            // Sort in memory by timestamp descending
+            const sortedOrders = [...orders].sort((a, b) => b.timestamp - a.timestamp);
+
+            const tbody = document.getElementById('orders-list');
+            tbody.innerHTML = '';
+            
+            if (sortedOrders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-gray-500">No orders yet.</td></tr>';
+                return;
+            }
+            
+            sortedOrders.forEach(o => {
+                const dateValue = new Date(o.timestamp);
+                const date = dateValue.toLocaleDateString('en-US') + ' ' + dateValue.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
+                
+                let statusClass = 'bg-gray-100 text-gray-800';
+                if (o.status === 'Pending') statusClass = 'bg-yellow-100 text-yellow-800';
+                else if (o.status === 'Shipped') statusClass = 'bg-blue-100 text-blue-800';
+                else if (o.status === 'Delivered') statusClass = 'bg-green-100 text-green-800';
+                else if (o.status === 'Cancelled') statusClass = 'bg-red-100 text-red-800';
+
+                const row = `
+                    <tr class="border-b border-gray-50 hover:bg-gray-50">
+                        <td class="p-4 pl-4 font-mono text-xs text-gray-500">#${o.id.substring(0,8)}</td>
+                        <td class="p-4 text-sm text-gray-700">${date}</td>
+                        <td class="p-4 font-bold text-gray-900">$${(o.total || 0).toFixed(2)}</td>
+                        <td class="p-4 pr-4 flex items-center justify-start">
+                            <span class="px-3 py-1 ${statusClass} rounded-full text-xs font-bold mr-2">${o.status}</span>
+                            <button onclick="openOrderModal('${o.id}', '${o.status}')" class="text-blue-600 hover:text-blue-900 font-medium px-2 py-1 hover:bg-blue-50 rounded transition duration-150">Edit</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        // Main render function called after any data change
+        function updateUI() {
+            renderProducts();
+            renderOrders();
+            calculateMetrics();
+        }
+
+        // --- CUSTOM MODAL UTILITIES (Replaces alert/confirm) ---
+        function showCustomActionModal(title, message, confirmText = 'Confirm', confirmColor = 'bg-red-600', showCancel = true) {
+            return new Promise(resolve => {
+                globalResolve = resolve;
+                document.getElementById('action-modal-title').textContent = title;
+                document.getElementById('action-modal-message').textContent = message;
+                
+                const confirmButton = document.getElementById('action-modal-confirm');
+                const cancelButton = document.getElementById('action-modal-cancel');
+
+                // Reset classes and apply new color
+                confirmButton.className = 'px-5 py-2 rounded-xl text-white font-medium shadow-lg transition ';
+                confirmButton.classList.add(confirmColor, confirmColor.replace('bg-', 'hover:bg-').replace('-600', '-700'));
+                confirmButton.textContent = confirmText;
+                
+                cancelButton.classList.toggle('hidden', !showCancel);
+
+                document.getElementById('custom-action-modal').classList.remove('hidden');
+            });
+        }
+
+        window.closeCustomActionModal = (result) => {
+            document.getElementById('custom-action-modal').classList.add('hidden');
+            if (globalResolve) {
+                globalResolve(result);
+                globalResolve = null;
+            }
+        };
+
+        // --- UI/NAVIGATION UTILITIES ---
+        window.switchTab = (tabName) => {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('aside nav button').forEach(btn => {
+                btn.classList.remove('bg-gray-800', 'border-l-4', 'border-blue-500');
+                btn.classList.add('hover:bg-gray-800');
+            });
+            document.getElementById(`view-${tabName}`).classList.add('active');
+            const activeBtn = document.getElementById(`nav-${tabName}`);
+            activeBtn.classList.add('bg-gray-800', 'border-l-4', 'border-blue-500');
+            activeBtn.classList.remove('hover:bg-gray-800');
+
+            const title = tabName.charAt(0).toUpperCase() + tabName.slice(1);
+            document.getElementById('page-title').textContent = title + (title === 'Dashboard' ? ' Overview' : ' Management');
+            
+            if(window.innerWidth < 768) {
+                 toggleMobileSidebar();
+            }
+        };
+        
+        window.toggleMobileSidebar = () => {
+            const sidebar = document.getElementById('sidebar');
+            const mobileBtn = document.getElementById('mobile-menu-btn');
+            
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                mobileBtn.innerHTML = '<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                mobileBtn.innerHTML = '<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>';
+            }
+        };
+
+        // --- PRODUCT ACTIONS (Add/Edit/Delete) ---
+        window.openProductModal = () => {
+            document.getElementById('modal-title').textContent = "Add Product";
+            document.getElementById('edit-id').value = "";
+            document.getElementById('prod-name').value = "";
+            document.getElementById('prod-price').value = "";
+            document.getElementById('prod-image').value = "https://placehold.co/400x400/e9ecef/212529?text=Product";
+            document.getElementById('product-modal').classList.remove('hidden');
+        };
+
+        window.editProduct = (id) => {
+            const p = products.find(x => x.id === id);
+            if (p) {
+                document.getElementById('modal-title').textContent = "Edit Product";
+                document.getElementById('edit-id').value = id;
+                document.getElementById('prod-name').value = p.name;
+                document.getElementById('prod-price').value = p.price;
+                document.getElementById('prod-image').value = p.image;
+                document.getElementById('product-modal').classList.remove('hidden');
+            }
+        };
+
+        window.closeProductModal = () => {
+            document.getElementById('product-modal').classList.add('hidden');
+        };
+
+        window.saveProduct = () => {
+            const id = document.getElementById('edit-id').value;
+            const name = document.getElementById('prod-name').value.trim();
+            const priceInput = document.getElementById('prod-price').value;
+            const image = document.getElementById('prod-image').value.trim();
+            const price = parseFloat(priceInput);
+
+            if (!name || isNaN(price) || price <= 0 || !image) {
+                showCustomActionModal('Input Error', "Please fill all fields correctly (Price must be a positive number).", 'Close', 'bg-blue-600', false);
+                return;
+            }
+
+            const data = { name, price, image, timestamp: Date.now() };
+
+            if (id) {
+                // Edit existing product
+                const index = products.findIndex(p => p.id === id);
+                if (index !== -1) {
+                    products[index] = { ...products[index], ...data };
+                }
+            } else {
+                // Add new product (THIS IS THE FIXED PART)
+                products.push({ ...data, id: generateUniqueId() });
+            }
+            
+            closeProductModal();
+            saveToLocalStorage();
+            updateUI();
+        };
+
+        window.deleteProduct = async (id) => {
+            const confirmed = await showCustomActionModal(
+                "Confirm Deletion", 
+                "Are you sure you want to delete this product? This action is irreversible for local data.",
+                "Delete",
+                "bg-red-600"
+            );
+            
+            if (confirmed) {
+                products = products.filter(p => p.id !== id);
+                saveToLocalStorage();
+                updateUI();
+            }
+        };
+
+        // --- ORDER EDITING FUNCTIONS ---
+        window.openOrderModal = (id, currentStatus) => {
+            document.getElementById('order-edit-id').value = id;
+            document.getElementById('order-display-id').textContent = `#${id.substring(0,8)}`;
+            document.getElementById('order-status-select').value = currentStatus;
+            document.getElementById('order-modal').classList.remove('hidden');
+        };
+
+        window.closeOrderModal = () => {
+            document.getElementById('order-modal').classList.add('hidden');
+        };
+
+        window.updateOrderStatus = () => {
+            const id = document.getElementById('order-edit-id').value;
+            const newStatus = document.getElementById('order-status-select').value;
+            
+            const orderIndex = orders.findIndex(o => o.id === id);
+            if (orderIndex !== -1) {
+                orders[orderIndex].status = newStatus;
+                saveToLocalStorage();
+                updateUI();
+            }
+            closeOrderModal();
+        };
+
+        // --- INITIAL SETUP ---
+        // Load existing data from localStorage or seed initial data
+        loadFromLocalStorage();
+        seedInitialData();
+        updateUI();
+
+    </script>
+</body>
+</html>
